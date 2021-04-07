@@ -3,7 +3,7 @@ typedef FlogNavCallback = void Function(Object? object);
 typedef FlogInfoCallback = void Function(Object? object, [Object? feature]);
 typedef FlogImportantCallback = void Function(Object? object);
 typedef FlogErrorCallback = void Function(Object? object, [dynamic stackTrace]);
-typedef FlogFatalCallback = void Function(Object? object);
+typedef FlogFatalCallback = void Function(Object? object, [dynamic stackTrace]);
 
 class FlogDelegate {
   FlogDelegate({
