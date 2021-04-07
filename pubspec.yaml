@@ -1,6 +1,6 @@
 name: flog
 description: A feature based logging library that helps filter logs and keep the console clean.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/mrgnhnt96/flog
 issue_tracker: https://github.com/mrgnhnt96/flog/issues
 homepage: https://github.com/mrgnhnt96/flog
