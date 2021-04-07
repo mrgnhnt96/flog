@@ -1,0 +1,19 @@
+name: flog
+description: A feature based logging library that helps filter logs and keep the console clean.
+version: 0.1.0
+repository: https://github.com/mrgnhnt96/flog
+issue_tracker: https://github.com/mrgnhnt96/flog/issues
+homepage: https://github.com/mrgnhnt96/flog
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ansicolor: ^2.0.1
+  stack_trace: ^1.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
