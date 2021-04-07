@@ -7,12 +7,12 @@ import 'text.dart';
 class StatementFormat {
   const StatementFormat({
     TextFormat? textFormat,
-    BackgroundColor? backgroundFormat,
+    BackgroundColor? backgroundColor,
   })  : _textFormat = textFormat,
-        _backgroundFormat = backgroundFormat;
+        _backgroundColor = backgroundColor;
 
   final TextFormat? _textFormat;
-  final BackgroundColor? _backgroundFormat;
+  final BackgroundColor? _backgroundColor;
 
   String apply(String str) {
     var _pen = AnsiPen();
@@ -63,7 +63,7 @@ class StatementFormat {
   }
 
   void _setBackground(AnsiPen pen) {
-    final _format = _backgroundFormat;
+    final _format = _backgroundColor;
     if (_format == null) return;
     switch (_format.color) {
       case FlogColors.black:
