@@ -1,6 +1,3 @@
-// TODO: clean up!
-// TODO: make flog delegate not null and stuff
-
 // ignore_for_file: invalid_use_of_protected_member
 
 import 'dart:developer' as d;
@@ -81,19 +78,6 @@ extension _FlogExtentions on _FlogTag {
 abstract class Flog {
   const Flog._();
 
-  /// ### Features
-  /// #### `.features`
-  /// Specify features that can be printed to console
-  ///
-  /// if `null`, ***all*** features will be printed to console
-  ///
-  /// Filtering applies to [flogInfo] and [flogState]
-  ///
-  /// [flogError], [flogImportant], [flogNav], and [flogFatal] will
-  /// ***always*** print to console
-  ///
-  /// ---
-  ///
   /// ### Formats
   /// #### `.formats`
   ///
@@ -107,26 +91,6 @@ abstract class Flog {
   ///
   /// - Background:
   ///   * Color
-  ///
-  /// ---
-  ///
-  /// ### Allow Navigation
-  /// #### `.allowNav`
-  ///
-  /// Enable navigation logging
-  ///
-  /// default: `true`
-  ///
-  /// ---
-  ///
-  /// ### Allow State
-  /// #### `.allowState`
-  ///
-  /// Enable state logging
-  ///
-  /// If `false`, it will override [features] and disable state logging
-  ///
-  /// if `true`, [features] will be applied and filtered when logging
   ///
   /// ---
   ///
@@ -155,7 +119,7 @@ abstract class Flog {
   ///
   /// default:
   /// ```dart
-  /// _allowLog = () {
+  /// .allowLog = () {
   ///   if (kDebugMode) return true;
   ///   if (kProfileMode) return true;
   ///   if (kReleaseMode) return false;
@@ -173,27 +137,63 @@ abstract class Flog {
   /// reference https://pub.dev/packages/stack_trace for more info
 
   static void setUp({
-    List<Object>? features,
     FlogFormats? formats,
-    bool allowNav: true,
-    bool allowState: true,
-    FlogLabeler? label,
     AllowLog? allowLog,
+    FlogLabeler? label,
     bool ansiColorDisabled: false,
     bool useCleanStackTrace: true,
   }) {
     c.ansiColorDisabled = ansiColorDisabled;
-    _features = features;
     _formats = formats;
     _labeler = label;
-    _allowState = allowState;
-    _allowNav = allowNav;
     _useCleanStackTrace = useCleanStackTrace;
     if (allowLog != null) _allowLog = allowLog;
   }
 
   /// Configure delegate to set logs to analytic services
   static set delegate(FlogDelegate delegate) => _delegate = delegate;
+
+  /// ### Features
+  /// #### `.features`
+  /// Specify features that can be printed to console
+  ///
+  /// if `null`, ***all*** features will be printed to console
+  ///
+  /// Filtering applies to [flogInfo] and [flogState]
+  ///
+  /// [flogError], [flogImportant], [flogNav], and [flogFatal] will
+  /// ***always*** print to console
+  ///
+  /// ---
+  ///
+  /// ### Allow Navigation
+  /// #### `.allowNav`
+  ///
+  /// Enable navigation logging
+  ///
+  /// default: `true`
+  ///
+  /// ---
+  ///
+  /// ### Allow State
+  /// #### `.allowState`
+  ///
+  /// Enable state logging
+  ///
+  /// If `false`, it will override [features] and disable state logging
+  ///
+  /// if `true`, [features] will be applied and filtered when logging
+  ///
+  /// ---
+  static void filter(
+    List<Object>? features, {
+    bool allowNav: true,
+    bool allowState: true,
+  }) {
+    _features = features;
+    _allowState = allowState;
+    _allowNav = allowNav;
+  }
 
   /// use to quickly test all flog formats and colors
   static void runFormatTest() {
@@ -238,7 +238,7 @@ void flogInfo(Object? object, [Object? feature]) {
   _filterAndLog(_FlogTag.info, object, feature: feature);
 }
 
-/// Use [flogImportant] to produce logs that may may require
+/// Use [flogImportant] to produce logs that may require
 /// additional attention
 ///
 /// use cases:
@@ -252,15 +252,26 @@ void flogImportant(Object? object) {
 
 /// Use [flogError] in an event of an exception or an undesired result
 void flogError(Object? object, [dynamic stackTrace]) {
-  if (_delegate.flogError != null) _delegate.flogError!(object, stackTrace);
-  _filterAndLog(_FlogTag.error, object, stackTrace: stackTrace);
+  final _stackTrace = _cleanTrace(stackTrace);
+  if (_delegate.flogError != null) _delegate.flogError!(object, _stackTrace);
+  _filterAndLog(_FlogTag.error, object, stackTrace: _stackTrace);
 }
 
 /// Use [flogFatal] to produce a log that represents an irreparable
 /// situation
 void flogFatal(Object? object, [dynamic stackTrace]) {
-  if (_delegate.flogFatal != null) _delegate.flogFatal!(object);
-  _filterAndLog(_FlogTag.fatal, object, stackTrace: stackTrace);
+  final _stackTrace = _cleanTrace(stackTrace);
+  if (_delegate.flogFatal != null) _delegate.flogFatal!(object, _stackTrace);
+  _filterAndLog(_FlogTag.fatal, object, stackTrace: _stackTrace);
+}
+
+String? _cleanTrace(dynamic stackTrace) {
+  String? _stackTrace;
+  if (stackTrace != null)
+    _stackTrace = _useCleanStackTrace
+        ? '\n${Trace.from(stackTrace).terse}'
+        : '\n$stackTrace';
+  return _stackTrace;
 }
 
 void _filterAndLog(
@@ -269,8 +280,8 @@ void _filterAndLog(
   dynamic stackTrace,
   Object? feature,
 }) {
-  final message = object.toString();
   if (!_allowLog()) return;
+  final message = object.toString();
 
   void _printMessage(StatementFormat? format) {
     late String _prefix;
@@ -279,19 +290,13 @@ void _filterAndLog(
     else
       _prefix = tag.name;
 
-    String? _stackTrace;
-    if (stackTrace != null)
-      _stackTrace = _useCleanStackTrace
-          ? '\n${Trace.from(stackTrace).terse}'
-          : '\n$stackTrace';
-
     if (format == null) {
       final _formattedPrefix =
           _prefix[_prefix.length - 1] == ' ' ? _prefix : _prefix + ' ';
-      print(_formattedPrefix + message + (_stackTrace ?? ''));
+      print(_formattedPrefix + message + (stackTrace ?? ''));
       return;
     }
-    final _formattedMessage = format.apply(message) + (_stackTrace ?? '');
+    final _formattedMessage = format.apply(message) + (stackTrace ?? '');
     d.log(
       _formattedMessage,
       name: _prefix,
