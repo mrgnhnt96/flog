@@ -48,6 +48,7 @@ AllowLog _allowLog = () {
 enum _FlogTag {
   state,
   nav,
+  request,
   info,
   important,
   error,
@@ -63,14 +64,14 @@ extension _FlogExtentions on _FlogTag {
         return 'NAV';
       case _FlogTag.info:
         return 'INFO';
+      case _FlogTag.request:
+        return 'REQUEST';
       case _FlogTag.important:
         return 'IMPORTANT';
       case _FlogTag.error:
         return 'ERROR';
       case _FlogTag.fatal:
         return 'FATAL';
-      default:
-        return '';
     }
   }
 }
@@ -201,6 +202,7 @@ abstract class Flog {
     flogError('this is the ERROR flog w/ stack track', StackTrace.current);
     flogFatal('this is the FATAL flog w/o stack track');
     flogFatal('this is the FATAL flog w/ stack track', StackTrace.current);
+    flogRequest('this is the REQUEST flog');
     flogImportant('this is the IMPORTANT flog');
     flogInfo('this is the INFO flog');
     flogState('this is the STATE flog');
@@ -220,10 +222,22 @@ void flogState(Object? object, [Object? feature]) {
   _filterAndLog(_FlogTag.state, object, feature: feature);
 }
 
-/// Use `flogNav` to produce logs regarding navigation changes.
+/// Use [flogNav] to produce logs regarding navigation changes.
 void flogNav(Object? object) {
   if (_delegate.flogNav != null) _delegate.flogNav!(object);
   _filterAndLog(_FlogTag.nav, object);
+}
+
+/// Use [flogRequest] to produce logs regarding any http/remote requests.
+///
+/// by adding a feature, this log will be filtered based off of
+/// the features that you are allowing to print via
+/// `Flog.setUp(features: [...])`
+///
+/// leave [feature] null to always print to console
+void flogRequest(Object? object, [Object? feature]) {
+  if (_delegate.flogRequest != null) _delegate.flogRequest!(object);
+  _filterAndLog(_FlogTag.request, object, feature: feature);
 }
 
 /// Use [flogInfo] to produce informative logs.
@@ -308,11 +322,20 @@ void _filterAndLog(
     case _FlogTag.nav:
       if (_allowNav) _printMessage(_formats?.nav);
       break;
+
     case _FlogTag.state:
       if (_allowState) {
         if (_features == null ||
             feature == null ||
             _features!.contains(feature)) _printMessage(_formats?.state);
+      }
+      break;
+
+    case _FlogTag.request:
+      if (_allowState) {
+        if (_features == null ||
+            feature == null ||
+            _features!.contains(feature)) _printMessage(_formats?.request);
       }
       break;
 
@@ -331,10 +354,6 @@ void _filterAndLog(
 
     case _FlogTag.fatal:
       _printMessage(_formats?.fatal);
-      break;
-
-    default:
-      _printMessage(null);
       break;
   }
 }

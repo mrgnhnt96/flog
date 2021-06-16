@@ -1,3 +1,6 @@
+## 0.2.0
+
+Added `flogRequest` for all http/remote requests
 ## 0.1.1
 
 Updated README
